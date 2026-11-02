@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stokku – Inventori</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#f2f4f7;--sf:#fff;--ink:#14213d;--mute:#5b6577;--line:#dde2ea;--brand:#0f766e;--on:#fff;--soft:#dcf3ef;--warn:#b45309;--wbg:#fdf0dc;--bad:#b42318;--out:#e08a1e;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1522;--sf:#162033;--ink:#e8edf5;--mute:#9aa7bd;--line:#26334a;--brand:#2dd4bf;--on:#04211e;--soft:#12332f;--warn:#fbbf6a;--wbg:#3a2a12;--bad:#ff8a80;--out:#fbbf6a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+header{background:var(--sf);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.bar{max-width:1100px;margin:auto;padding:10px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+h1{font-size:19px;margin:0;font-weight:800}h2{font-size:17px;margin:0 0 12px}
+nav{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+nav button{border:0;background:none;color:var(--mute);font:inherit;font-weight:600;padding:8px 12px;border-radius:8px;cursor:pointer}
+nav button[aria-current]{background:var(--soft);color:var(--brand)}
+main{max-width:1100px;margin:auto;padding:16px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.card{background:var(--sf);border:1px solid var(--line);border-radius:10px;padding:16px}
+.grid{display:grid;gap:12px}.kpi{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:12px}
+.two{grid-template-columns:repeat(auto-fit,minmax(310px,1fr))}
+.kpi b{display:block;font-size:24px;font-weight:800}.kpi span,.mute{color:var(--mute);font-size:13px}
+.btn{border:1px solid var(--line);background:var(--sf);color:var(--ink);font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn.pri{background:var(--brand);color:var(--on);border-color:var(--brand)}.btn.bad{color:var(--bad)}.btn:disabled{opacity:.5}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:10px}label input,label select{margin-top:4px}
+.tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}.tools>input,.tools>select{flex:1;min-width:150px;width:auto}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:600px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:13px;color:var(--mute);font-weight:600}.n{text-align:right}
+.tag{padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;background:var(--wbg);color:var(--warn)}.tag.o{background:var(--bad);color:var(--sf)}.tag.g{background:var(--soft);color:var(--brand)}
+.thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;background:var(--line);display:block}
+.items{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.it img,.it .ph{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:var(--line);display:block;margin-bottom:8px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}
+.chart{display:flex;align-items:flex-end;gap:4px;height:160px;margin-top:8px}
+.chart>div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11px;color:var(--mute);min-width:0}
+.chart .p{display:flex;gap:2px;align-items:flex-end;width:100%;height:calc(100% - 16px)}.chart i{flex:1;border-radius:3px 3px 0 0;min-height:1px}
+.in{background:var(--brand)}.ou{background:var(--out)}
+.leg{display:flex;gap:14px;font-size:13px;color:var(--mute)}.leg b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+.hint{background:var(--soft);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--sf);color:var(--ink);width:min(460px,94vw);padding:20px}dialog::backdrop{background:rgba(0,0,0,.45)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}#toast.on{opacity:1}
+.login{max-width:340px;margin:12vh auto}.empty{color:var(--mute);text-align:center;padding:18px 0}
+@media print{header,.tools,.noprint{display:none}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<dialog id="dlg"><form id="f" method="dialog"></form></dialog>
+<div id="toast" role="status"></div>
+<script>
+/* ====== ISI DUA BARIS INI dari Supabase > Project Settings > API ====== */
+const SUPABASE_URL="https://omrianwumxrwhwmxlecv.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcmlhbnd1bXhyd2h3bXhsZWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MzU5NjUsImV4cCI6MjEwOTIxMTk2NX0.DRoJ0yAzw7b26JwQez6ZFXYiLHKv8Q5t1mm_Po8azJ4";
+/* ===================================================================== */
+const $=s=>document.querySelector(s),root=$("#root");
+const rp=n=>"Rp"+Math.round(n||0).toLocaleString("id-ID");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fd=(d,o)=>new Date(d).toLocaleDateString("id-ID",o||{day:"numeric",month:"short"});
+const toast=t=>{const e=$("#toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),2400)};
+let sb,items=[],moves=[],view="dash",q="",flt="",period=14,mtype="";
+const TL={in:"Masuk",out:"Keluar",adjust:"Penyesuaian"};
+
+if(SUPABASE_URL.startsWith("ISI_")){root.innerHTML='<div class="login card"><h2>Belum terhubung</h2><p>Isi <b>SUPABASE_URL</b> dan <b>SUPABASE_ANON_KEY</b> di bagian atas script file ini, lalu muat ulang. Panduan ada di README.</p></div>'}
+else{sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);boot()}
+
+async function boot(){const{data}=await sb.auth.getSession();data.session?start():loginView()}
+function loginView(){
+  root.innerHTML=`<form class="login card" id="lg"><h1>Stokku</h1><p class="mute">Masuk untuk mengelola stok.</p>
+  <label>Email<input name="e" type="email" required autocomplete="username"></label>
+  <label>Kata sandi<input name="p" type="password" required autocomplete="current-password"></label>
+  <button class="btn pri" style="width:100%">Masuk</button></form>`;
+  $("#lg").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);
+    const{error}=await sb.auth.signInWithPassword({email:f.get("e"),password:f.get("p")});
+    error?toast("Email atau kata sandi salah"):start()};
+}
+async function load(){
+  const a=await sb.from("item_stock").select("*").order("name");
+  const b=await sb.from("stock_movements").select("*,items(name,sku,unit)").order("created_at",{ascending:false}).limit(3000);
+  if(a.error||b.error)return toast("Gagal memuat data: "+(a.error||b.error).message);
+  items=a.data;moves=b.data;
+}
+async function start(){
+  root.innerHTML=`<header><div class="bar"><h1>Stokku</h1><nav id="nav">
+  <button data-v="dash">Dashboard</button><button data-v="items">Barang</button><button data-v="move">Pergerakan</button><button data-v="rep">Laporan stok</button></nav>
+  <button class="btn" id="out">Keluar</button></div></header><main id="app"></main>`;
+  $("#nav").onclick=e=>{const v=e.target.dataset.v;if(v){view=v;q="";flt="";render()}};
+  $("#out").onclick=async()=>{await sb.auth.signOut();loginView()};
+  await load();render();
+}
+const st=i=>i.stock<=0?'<span class="tag o">Habis</span>':i.stock<=i.min_stock?'<span class="tag">Menipis</span>':'<span class="tag g">Aman</span>';
+function render(){
+  document.querySelectorAll("#nav button").forEach(b=>b.dataset.v===view?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
+  $("#app").innerHTML={dash,items:itemsV,move:moveV,rep}[view]();
+  const qi=$("#q");if(qi)qi.oninput=()=>{q=qi.value;const p=qi.selectionStart;render();const n=$("#q");n.focus();n.setSelectionRange(p,p)};
+  document.querySelectorAll("[data-flt]").forEach(s=>s.onchange=()=>{flt=s.value;render()});
+  const pr=$("#per");if(pr)pr.onchange=()=>{period=+pr.value;render()};
+  const mt=$("#mt");if(mt)mt.onchange=()=>{mtype=mt.value;render()};
+}
+const match=i=>(i.name+i.sku+(i.category||"")).toLowerCase().includes(q.toLowerCase());
+
+/* ---------- DASHBOARD ---------- */
+function dash(){
+  const since=Date.now()-period*864e5,mv=moves.filter(m=>new Date(m.created_at)>=since);
+  const inn=mv.filter(m=>m.type==="in").reduce((a,m)=>a+m.qty,0),out=mv.filter(m=>m.type==="out").reduce((a,m)=>a-m.qty,0);
+  const val=items.reduce((a,i)=>a+i.cost*i.stock,0),low=items.filter(i=>i.stock<=i.min_stock).sort((a,b)=>a.stock-b.stock);
+  const days=[];for(let k=period-1;k>=0;k--){const d=new Date();d.setDate(d.getDate()-k);const key=d.toDateString();
+    const x=mv.filter(m=>new Date(m.created_at).toDateString()===key);
+    days.push({l:fd(d,{day:"numeric"}),i:x.filter(m=>m.type==="in").reduce((a,m)=>a+m.qty,0),o:x.filter(m=>m.type==="out").reduce((a,m)=>a-m.qty,0)})}
+  const mx=Math.max(1,...days.flatMap(d=>[d.i,d.o])),tot={};
+  mv.filter(m=>m.type==="out").forEach(m=>{const n=m.items?.name||"?";tot[n]=(tot[n]||0)-m.qty});
+  const top=Object.entries(tot).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const msg=low.length?`<b>${low.length} barang</b> perlu dibeli ulang.${top[0]?` Paling laku periode ini: <b>${esc(top[0][0])}</b>.`:""}`:`Semua stok aman.${top[0]?` Paling laku periode ini: <b>${esc(top[0][0])}</b>.`:""}`;
+  return `<div class="tools"><h2 style="margin:0;flex:1">Dashboard</h2><select id="per" style="width:auto;flex:none" aria-label="Periode"><option value="7" ${period==7?"selected":""}>7 hari terakhir</option><option value="14" ${period==14?"selected":""}>14 hari terakhir</option><option value="30" ${period==30?"selected":""}>30 hari terakhir</option></select></div>
+  <div class="hint">${msg}</div>
+  <div class="grid kpi"><div class="card"><span>Jenis barang</span><b>${items.length}</b></div><div class="card"><span>Nilai persediaan (harga beli)</span><b>${rp(val)}</b></div>
+  <div class="card"><span>Barang masuk</span><b>${inn}</b></div><div class="card"><span>Barang keluar</span><b>${out}</b></div></div>
+  <div class="grid two"><div class="card"><h2>Pergerakan harian</h2><div class="leg"><span><b class="in"></b>Masuk</span><span><b class="ou"></b>Keluar</span></div>
+  <div class="chart">${days.map(d=>`<div title="${d.l}: masuk ${d.i}, keluar ${d.o}"><div class="p"><i class="in" style="height:${d.i/mx*100}%"></i><i class="ou" style="height:${d.o/mx*100}%"></i></div>${period<=14?d.l:""}</div>`).join("")}</div></div>
+  <div class="card"><h2>Perlu restok</h2>${low.length?low.slice(0,6).map(i=>`<div class="row"><span>${esc(i.name)} ${st(i)}</span><b>${i.stock} ${esc(i.unit)}</b></div>`).join(""):'<div class="empty">Tidak ada.</div>'}</div>
+  <div class="card"><h2>Paling banyak keluar</h2>${top.length?top.map(t=>`<div class="row"><span>${esc(t[0])}</span><b>${t[1]}</b></div>`).join(""):'<div class="empty">Belum ada barang keluar.</div>'}</div>
+  <div class="card"><h2>Aktivitas terbaru</h2>${moves.slice(0,6).map(m=>`<div class="row"><span>${esc(m.items?.name)} <span class="mute">${TL[m.type]} · ${fd(m.created_at)}</span></span><b>${m.qty>0?"+":""}${m.qty}</b></div>`).join("")||'<div class="empty">Belum ada aktivitas.</div>'}</div></div>`;
+}
+
+/* ---------- BARANG ---------- */
+function itemsV(){
+  const l=items.filter(match);
+  return `<div class="tools"><input id="q" type="search" value="${esc(q)}" placeholder="Cari nama, SKU, kategori" aria-label="Cari"><button class="btn pri" onclick="itemForm()">Tambah barang</button></div>
+  <div class="items">${l.map(i=>`<div class="card it">${i.photo_url?`<img src="${esc(i.photo_url)}" alt="${esc(i.name)}" loading="lazy">`:'<div class="ph"></div>'}
+  <b>${esc(i.name)}</b><div class="mute">${esc(i.sku)}${i.category?" · "+esc(i.category):""}</div><div class="row" style="border:0"><span>${rp(i.price)}</span><span>${i.stock} ${esc(i.unit)} ${st(i)}</span></div>
+  <button class="btn" style="width:100%" onclick="itemForm('${i.id}')">Ubah</button></div>`).join("")}</div>${l.length?"":'<div class="empty">Belum ada barang. Klik “Tambah barang”.</div>'}`;
+}
+function shrink(file){return new Promise(r=>{const im=new Image();im.onload=()=>{const s=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);c.toBlob(r,"image/jpeg",.8)};im.src=URL.createObjectURL(file)})}
+window.itemForm=id=>{
+  const p=items.find(i=>i.id===id),f=$("#f");
+  f.innerHTML=`<h2>${p?"Ubah barang":"Tambah barang"}</h2>
+  <label>Foto barang<input type="file" name="photo" accept="image/*" capture="environment"></label>${p?.photo_url?`<img class="thumb" style="width:80px;height:80px;margin:-4px 0 10px" src="${esc(p.photo_url)}" alt="">`:""}
+  <label>Nama barang<input name="name" required value="${esc(p?.name)}"></label>
+  <div class="f2"><label>SKU / kode<input name="sku" required value="${esc(p?.sku)}"></label><label>Kategori<input name="category" value="${esc(p?.category)}"></label>
+  <label>Satuan<input name="unit" required value="${esc(p?.unit||"pcs")}"></label><label>Batas stok menipis<input name="min_stock" type="number" min="0" required value="${p?.min_stock??5}"></label>
+  <label>Harga beli (Rp)<input name="cost" type="number" min="0" required value="${p?.cost??""}"></label><label>Harga jual (Rp)<input name="price" type="number" min="0" required value="${p?.price??""}"></label></div>
+  ${p?"":`<label>Stok awal<input name="stock" type="number" min="0" value="0"></label>`}
+  <div style="display:flex;gap:8px;justify-content:flex-end">${p?'<button class="btn bad" type="button" id="del" style="margin-right:auto">Hapus</button>':""}<button class="btn" type="button" id="cx">Batal</button><button class="btn pri" id="sv">Simpan barang</button></div>`;
+  $("#cx").onclick=()=>$("#dlg").close();
+  if(p)$("#del").onclick=async()=>{if(!confirm("Hapus "+p.name+" beserta riwayat pergerakannya?"))return;
+    const{error}=await sb.from("items").delete().eq("id",p.id);if(error)return toast(error.message);$("#dlg").close();toast("Barang dihapus");await load();render()};
+  f.onsubmit=async e=>{e.preventDefault();$("#sv").disabled=true;$("#sv").textContent="Menyimpan…";
+    const d=new FormData(f),o={name:d.get("name").trim(),sku:d.get("sku").trim(),category:d.get("category").trim()||null,unit:d.get("unit").trim(),min_stock:+d.get("min_stock"),cost:+d.get("cost"),price:+d.get("price")};
+    const file=d.get("photo");
+    if(file&&file.size){const b=await shrink(file),path=crypto.randomUUID()+".jpg";
+      const up=await sb.storage.from("item-photos").upload(path,b,{contentType:"image/jpeg"});
+      if(up.error){toast("Foto gagal diunggah: "+up.error.message);$("#sv").disabled=false;$("#sv").textContent="Simpan barang";return}
+      o.photo_url=sb.storage.from("item-photos").getPublicUrl(path).data.publicUrl}
+    let r;
+    if(p)r=await sb.from("items").update(o).eq("id",p.id);
+    else{r=await sb.from("items").insert(o).select().single();const s=+d.get("stock");
+      if(!r.error&&s>0)await sb.from("stock_movements").insert({item_id:r.data.id,type:"in",qty:s,note:"Stok awal"})}
+    if(r.error){toast(r.error.message.includes("duplicate")?"SKU sudah dipakai":r.error.message);$("#sv").disabled=false;$("#sv").textContent="Simpan barang";return}
+    $("#dlg").close();toast("Barang disimpan");await load();render()};
+  $("#dlg").showModal();
+};
+
+/* ---------- PERGERAKAN ---------- */
+function moveV(){
+  const l=moves.filter(m=>!mtype||m.type===mtype).slice(0,200);
+  return `<div class="grid two" style="align-items:start"><div class="card"><h2>Catat pergerakan</h2>
+  ${items.length?`<form id="mf"><label>Barang<select name="i" required>${items.map(i=>`<option value="${i.id}">${esc(i.name)} (stok ${i.stock})</option>`).join("")}</select></label>
+  <div class="f2"><label>Jenis<select name="t" id="mtp"><option value="in">Masuk (beli/terima)</option><option value="out">Keluar (jual/pakai)</option><option value="adjust">Penyesuaian (stok opname)</option></select></label>
+  <label><span id="ql">Jumlah</span><input name="q" type="number" min="0" required></label></div>
+  <label>Catatan<input name="n" placeholder="Contoh: penjualan toko, kiriman supplier"></label><button class="btn pri" style="width:100%">Simpan pergerakan</button></form>`:'<div class="empty">Tambahkan barang dulu di menu Barang.</div>'}</div>
+  <div class="card"><div class="tools"><h2 style="margin:0;flex:1">Riwayat</h2><select id="mt" style="width:auto;flex:none" aria-label="Jenis"><option value="">Semua</option><option value="in" ${mtype=="in"?"selected":""}>Masuk</option><option value="out" ${mtype=="out"?"selected":""}>Keluar</option><option value="adjust" ${mtype=="adjust"?"selected":""}>Penyesuaian</option></select></div>
+  <div class="scroll"><table><thead><tr><th>Tanggal</th><th>Barang</th><th>Jenis</th><th class="n">Jumlah</th><th>Catatan</th></tr></thead><tbody>${l.map(m=>`<tr><td>${fd(m.created_at,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</td><td>${esc(m.items?.name)}</td><td>${TL[m.type]}</td><td class="n"><b>${m.qty>0?"+":""}${m.qty}</b></td><td class="mute">${esc(m.note)}</td></tr>`).join("")}</tbody></table>${l.length?"":'<div class="empty">Belum ada pergerakan.</div>'}</div></div></div>`;
+}
+document.addEventListener("change",e=>{if(e.target.id==="mtp")$("#ql").textContent=e.target.value==="adjust"?"Stok sebenarnya":"Jumlah"});
+document.addEventListener("submit",async e=>{
+  if(e.target.id!=="mf")return;e.preventDefault();
+  const d=new FormData(e.target),it=items.find(i=>i.id===d.get("i")),t=d.get("t"),v=+d.get("q");
+  let qty=t==="in"?v:t==="out"?-v:v-it.stock;
+  if(t==="out"&&v>it.stock)return toast("Stok "+it.name+" hanya "+it.stock);
+  if(qty===0)return toast("Tidak ada perubahan jumlah");
+  const{error}=await sb.from("stock_movements").insert({item_id:it.id,type:t,qty,note:d.get("n").trim()||null});
+  if(error)return toast(error.message);toast("Pergerakan dicatat");await load();render();
+});
+
+/* ---------- LAPORAN STOK ---------- */
+function rep(){
+  const l=items.filter(match).filter(i=>!flt||(flt==="out"?i.stock<=0:flt==="low"?i.stock>0&&i.stock<=i.min_stock:i.stock>i.min_stock));
+  const val=l.reduce((a,i)=>a+i.cost*i.stock,0),sale=l.reduce((a,i)=>a+i.price*i.stock,0);
+  return `<div class="tools"><input id="q" type="search" value="${esc(q)}" placeholder="Cari barang" aria-label="Cari"><select data-flt aria-label="Status"><option value="">Semua status</option><option value="ok" ${flt=="ok"?"selected":""}>Aman</option><option value="low" ${flt=="low"?"selected":""}>Menipis</option><option value="out" ${flt=="out"?"selected":""}>Habis</option></select>
+  <button class="btn" onclick="csv()">Unduh CSV</button><button class="btn" onclick="print()">Cetak</button></div>
+  <div class="grid kpi"><div class="card"><span>Jenis barang</span><b>${l.length}</b></div><div class="card"><span>Nilai stok (harga beli)</span><b>${rp(val)}</b></div><div class="card"><span>Potensi penjualan</span><b>${rp(sale)}</b></div></div>
+  <div class="card scroll"><table><thead><tr><th></th><th>Barang</th><th>SKU</th><th class="n">Stok</th><th class="n">Min</th><th class="n">Harga beli</th><th class="n">Nilai stok</th><th>Status</th></tr></thead><tbody>
+  ${l.map(i=>`<tr><td>${i.photo_url?`<img class="thumb" src="${esc(i.photo_url)}" alt="" loading="lazy">`:'<div class="thumb"></div>'}</td><td>${esc(i.name)}<div class="mute">${esc(i.category)}</div></td><td>${esc(i.sku)}</td><td class="n"><b>${i.stock}</b> ${esc(i.unit)}</td><td class="n">${i.min_stock}</td><td class="n">${rp(i.cost)}</td><td class="n">${rp(i.cost*i.stock)}</td><td>${st(i)}</td></tr>`).join("")}</tbody></table>${l.length?"":'<div class="empty">Tidak ada data.</div>'}</div>`;
+}
+window.csv=()=>{
+  const r=[["SKU","Nama","Kategori","Satuan","Stok","Stok minimum","Harga beli","Harga jual","Nilai stok"],...items.map(i=>[i.sku,i.name,i.category||"",i.unit,i.stock,i.min_stock,i.cost,i.price,i.cost*i.stock])];
+  const t=r.map(x=>x.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+t],{type:"text/csv"}));a.download="laporan-stok-"+new Date().toISOString().slice(0,10)+".csv";a.click();
+};
+</script>
+</body>
+</html>
